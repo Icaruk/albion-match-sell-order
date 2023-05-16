@@ -3,5 +3,5 @@
 	"startY": 369,
 	"sizeX": 75,
 	"sizeY": 15,
-	"deleteImage": false
+	"deleteImage": true
 }

@@ -42,17 +42,11 @@ func main() {
 
 	const monitorIdx = 0
 
-	apikey := config.Apikey
 	startX := config.StartX
 	startY := config.StartY
 	sizeX := config.SizeX
 	sizeY := config.SizeY
 	deleteImage := config.DeleteImage
-
-	if len(apikey) == 0 {
-		fmt.Println("Error: apikey is empty")
-		return
-	}
 
 	fileName := "img.png"
 	// fileName := "img_debug.png" //? Debug
