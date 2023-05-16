@@ -26,12 +26,11 @@ func main() {
 	}
 
 	type Config struct {
-		Apikey      string `json:"apikey"`
-		StartX      int    `json:"startX"`
-		StartY      int    `json:"startY"`
-		SizeX       int    `json:"sizeX"`
-		SizeY       int    `json:"sizeY"`
-		DeleteImage bool   `json:"deleteImage"`
+		StartX      int  `json:"startX"`
+		StartY      int  `json:"startY"`
+		SizeX       int  `json:"sizeX"`
+		SizeY       int  `json:"sizeY"`
+		DeleteImage bool `json:"deleteImage"`
 	}
 
 	var config Config
