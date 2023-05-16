@@ -1,15 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"image"
 	"image/png"
-	"io/ioutil"
-	"mime/multipart"
-	"net/http"
 	"os"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -23,13 +20,10 @@ import (
 func main() {
 
 	// Read json file
-	jsonFile, err := os.Open("config.json")
+	jsonFile, err := os.ReadFile("config.json")
 	if err != nil {
 		fmt.Println("Error: invalid config.json")
 	}
-	defer jsonFile.Close()
-
-	byteValue, _ := ioutil.ReadAll(jsonFile)
 
 	type Config struct {
 		Apikey      string `json:"apikey"`
@@ -41,7 +35,7 @@ func main() {
 	}
 
 	var config Config
-	err = json.Unmarshal(byteValue, &config)
+	err = json.Unmarshal(jsonFile, &config)
 	if err != nil {
 		fmt.Println("Error: invalid config.json")
 	}
@@ -61,11 +55,10 @@ func main() {
 	}
 
 	fileName := "img.png"
-	resizedFilename := "img_resized.png"
+	// fileName := "img_debug.png" //? Debug
 
 	if deleteImage {
 		defer os.Remove(fileName)
-		defer os.Remove(resizedFilename)
 	}
 
 	// Screenshot
@@ -91,7 +84,7 @@ func main() {
 	draw.CatmullRom.Scale(rgba, rgba.Rect, img, img.Bounds(), draw.Over, nil)
 
 	// Encode to `output`:
-	output, _ := os.Create(resizedFilename)
+	output, _ := os.Create(fileName)
 	defer output.Close()
 	png.Encode(output, rgba)
 
@@ -104,96 +97,15 @@ func main() {
 
 	fmt.Println("Reading image...")
 
-	const apiurl string = "https://api.ocr.space/parse/image"
-
-	// curl -H "apikey:helloworld" --form "base64Image=data:image/jpeg;base64,/9j/AAQSk [Long string here ]" --form "language=eng" --form "isOverlayRequired=false" https://api.ocr.space/parse/image
-	var requestBody bytes.Buffer
-	requestWriter := multipart.NewWriter(&requestBody)
-
-	// add image file to request body
-	imageFile, err := os.Open(resizedFilename)
+	// tesseract -l eng .\img_debug.png stdout
+	cmd := exec.Command("tesseract", "-l", "eng", fileName, "stdout")
+	cmdOutput, err := cmd.Output()
 	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer imageFile.Close()
-
-	imageContents, err := ioutil.ReadAll(imageFile)
-	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error:", err)
 		return
 	}
 
-	imageField, err := requestWriter.CreateFormFile("base64Image", "image.jpg")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	imageField.Write(imageContents)
-
-	// add form data fields to request body
-	requestWriter.WriteField("apikey", apikey)
-	requestWriter.WriteField("language", "eng")
-	requestWriter.WriteField("isOverlayRequired", "false")
-	requestWriter.WriteField("isCreateSearchablePdf", "false")
-
-	requestWriter.Close()
-
-	// create HTTP request with the request body
-	req, err := http.NewRequest("POST", apiurl, &requestBody)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	req.Header.Set("Content-Type", requestWriter.FormDataContentType())
-
-	// send HTTP request
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer resp.Body.Close()
-
-	// ---------------------------------
-	// Read OCR response
-	// ---------------------------------
-
-	responseBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	/*
-		{
-			"ParsedResults": [
-				{
-					"TextOverlay": {
-						"Lines": [],
-						"HasOverlay": false,
-						"Message": "Text overlay is not provided as it is not requested"
-					},
-					"TextOrientation": "0",
-					"FileParseExitCode": 1,
-					"ParsedText": "1 39.999\r\n",
-					"ErrorMessage": "",
-					"ErrorDetails": ""
-				}
-			],
-			"OCRExitCode": 1,
-			"IsErroredOnProcessing": false,
-			"ProcessingTimeInMilliseconds": "937",
-			"SearchablePDFURL": "Searchable PDF not generated as it was not requested."
-		}
-	*/
-
-	var jsonData map[string]interface{}
-	json.Unmarshal(responseBody, &jsonData)
-
-	// Get ParsedResults[0].ParsedText
-	parsedText := jsonData["ParsedResults"].([]interface{})[0].(map[string]interface{})["ParsedText"].(string)
+	parsedText := string(cmdOutput)
 	fmt.Println("    ParsedText ->", parsedText)
 
 	// Replace regex
