@@ -122,30 +122,14 @@ func main() {
 	fmt.Println("_______________________________")
 
 	for {
-		// Ask to press "Y/n key"
-		fmt.Println("Execute again? y/n")
+		fmt.Println("Press ENTER to execute again or CTRL+C to quit")
 
 		var response string
 		fmt.Scanln(&response)
 		response = strings.ToLower(response)
 
-		allowedResponses := map[string]string{
-			"y": "y",
-			"n": "n",
-		}
+		main()
 
-		if allowedResponses[response] == "" {
-			fmt.Println("❌ Invalid response")
-		}
-
-		if response == "n" {
-			break
-		}
-
-		if response == "y" {
-			main()
-			break
-		}
 	}
 
 }
