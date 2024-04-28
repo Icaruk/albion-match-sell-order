@@ -109,7 +109,7 @@ func main() {
 	parsedInt, _ := strconv.Atoi(parsedText)
 	parsedInt--
 
-	// Cast to string
+	// Cast to int
 	parsedText = strconv.Itoa(parsedInt)
 
 	if parsedInt == -1 {
